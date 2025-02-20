@@ -4,14 +4,10 @@ on:
   push:
     branches:
       - main
-  pull_request:
-    types: [opened, synchronize, reopened, closed]
-    branches:
-      - main
 
 jobs:
   build_and_deploy_job:
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     name: Build and Deploy Job
     steps:
@@ -19,6 +15,13 @@ jobs:
         with:
           submodules: true
           lfs: false
+      - name: Use Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+      - name: bun install dependencies
+        run: |
+          bun install
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
@@ -31,16 +34,5 @@ jobs:
           app_location: "/" # App source code path
           api_location: "" # Api source code path - optional
           output_location: "out" # Built app content directory - optional
+          app_build_command: "bun --bun run build"
           ###### End of Repository/Build Configurations ######
-
-  close_pull_request_job:
-    if: github.event_name == 'pull_request' && github.event.action == 'closed'
-    runs-on: ubuntu-latest
-    name: Close Pull Request Job
-    steps:
-      - name: Close Pull Request
-        id: closepullrequest
-        uses: Azure/static-web-apps-deploy@v1
-        with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_KIND_COAST_0AAA7101E }}
-          action: "close"
